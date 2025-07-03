@@ -86,8 +86,9 @@ export default class Player {
         return false
     }
     beginJump(blocks: Block[]) {
+        const cushionedJump = this.cushionedJump(blocks)
         if (this.fallTime > Player.CoyoteTime
-            && !this.cushionedJump(blocks)
+            && !cushionedJump
         ) return
 
         this.vy = 0 // Without resetting to zero we get a weak jump if the jump is cushioned

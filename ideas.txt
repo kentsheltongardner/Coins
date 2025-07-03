@@ -3,4 +3,10 @@ Personal backtracking
     Velocity and position reversal
     Increase the length of the timeline through upgrades?
 
-Test
+Resize
+    When holding a key, rather than moving the player changes size
+
+Wall grip
+
+Orthogonal grapple
+
