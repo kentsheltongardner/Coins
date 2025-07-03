@@ -252,8 +252,9 @@ export default class Game {
         this.renderBlocks(offsetX, offsetY)
         this.renderCoins(interpolation, offsetX, offsetY)
         this.renderPlayer(interpolation, offsetX, offsetY)
-        this.renderCoinCounter()
         this.renderOverlay(interpolation, offsetX, offsetY)
+        this.renderCoinCounter()
+        this.renderInstructions()
     }
     renderPlayer(interpolation: number, offsetX: number, offsetY: number) {
         this.context.fillStyle = '#ccc'
@@ -325,8 +326,15 @@ export default class Game {
         this.context.fill()
     }
     renderCoinCounter() {
-        this.context.fillStyle = '#fc0'
+        this.context.fillStyle = '#aaa'
         this.context.font = '50px sans-serif'
         this.context.fillText(this.player.coins + '', 10, 60)
+    }
+    renderInstructions() {
+        this.context.fillStyle = '#aaa'
+        this.context.font = '16px sans-serif'
+        this.context.fillText('Use arrow keys to move', 10, window.innerHeight - 80)
+        this.context.fillText('Press \'c\' to jump', 10, window.innerHeight - 50)
+        this.context.fillText('Press \'x\' plus arrow keys to look', 10, window.innerHeight - 20)
     }
 }
