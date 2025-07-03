@@ -175,7 +175,7 @@ export default class Game {
 
 
     loop(time: number) {
-        const deltaTime = (time - this.lastTime) / 1000
+        const deltaTime = Math.min((time - this.lastTime) / 1000, 0.25) // min to prevent catch up on resume
         this.lastTime = time
 
         this.update(deltaTime)
