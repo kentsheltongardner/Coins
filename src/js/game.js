@@ -279,11 +279,11 @@ export default class Game {
     renderOverlay(interpolation, offsetX, offsetY) {
         const x = this.player.interpolatedX(interpolation) - offsetX + Player.Width / 2;
         const y = this.player.interpolatedY(interpolation) - offsetY + Player.Height / 2;
-        const gradient = this.context.createRadialGradient(x, y, 0, x, y, 400);
+        const gradient = this.context.createRadialGradient(x, y, 0, x, y, 500);
         gradient.addColorStop(0, '#0000');
-        gradient.addColorStop(0.6, '#0000');
-        gradient.addColorStop(1, '#000a');
-        this.context.globalCompositeOperation = 'color-burn';
+        gradient.addColorStop(0.6, '#0018');
+        gradient.addColorStop(1, '#012a');
+        this.context.globalCompositeOperation = 'overlay';
         this.context.fillStyle = gradient;
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.context.globalCompositeOperation = 'source-over';
@@ -296,7 +296,7 @@ export default class Game {
             this.context.roundRect(x, y, block.w, block.h, 0);
             //this.context.roundRect(x, y, block.w, block.h, BorderRadius)
         }
-        this.context.fillStyle = '#321';
+        this.context.fillStyle = '#421';
         this.context.fill();
         this.context.beginPath();
         for (const block of this.blocks) {
@@ -305,7 +305,7 @@ export default class Game {
             this.context.roundRect(x, y, block.w - BorderThickness * 2, block.h - BorderThickness * 2, 0);
             //this.context.roundRect(x, y, block.w - BorderThickness * 2, block.h - BorderThickness * 2, BorderRadius - BorderThickness)
         }
-        this.context.fillStyle = '#100c08';
+        this.context.fillStyle = '#201208';
         this.context.fill();
     }
     renderCoins(interpolation, offsetX, offsetY) {

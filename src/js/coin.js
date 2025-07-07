@@ -1,5 +1,5 @@
 export default class Coin {
-    static Radius = 10;
+    static Radius = 7;
     static Diameter = Coin.Radius * 2;
     static SeekSpeed = 10;
     static Drag = 3;

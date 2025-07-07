@@ -1,5 +1,5 @@
 export default class Coin {
-    static readonly Radius = 10
+    static readonly Radius = 7
     static readonly Diameter = Coin.Radius * 2
     static readonly SeekSpeed = 10
     static readonly Drag = 3

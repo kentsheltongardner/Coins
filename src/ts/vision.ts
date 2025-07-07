@@ -252,9 +252,7 @@ export default class Vision {
         return extendPoint
     }
 
-
     orderPoints() {
         this.points.sort((a, b) => Math.atan2(this.center.y - a.y, this.center.x - a.x) - Math.atan2(this.center.y - b.y, this.center.x - b.x))
     }
-
 }
