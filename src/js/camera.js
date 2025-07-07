@@ -1,3 +1,4 @@
+import Rectangle from './rectangle.js';
 export default class Camera {
     static TrackingSpeed = 10.0;
     //public zoom: number
@@ -23,5 +24,12 @@ export default class Camera {
     }
     interpolatedY(interpolation) {
         return this.previousY + (this.y - this.previousY) * interpolation;
+    }
+    displayRectangle(interpolation) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const x = this.interpolatedX(interpolation) - w / 2;
+        const y = this.interpolatedY(interpolation) - h / 2;
+        return new Rectangle(x, y, w, h);
     }
 }

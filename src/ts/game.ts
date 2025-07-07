@@ -1,8 +1,8 @@
-import Block from './block.js'
+import Rectangle from './rectangle.js'
 import Camera from './camera.js'
 import Coin from './coin.js'
 import Player from './player.js'
-import Point from './point.js'
+import Vision from './vision.js'
 
 const Tau = Math.PI * 2
 const BorderThickness = 4
@@ -13,11 +13,11 @@ export default class Game {
     static readonly UpdateStep = 1 / 240
 
     public player = new Player(50, -2000)
-    public blocks = new Array<Block>()
+    public blocks = new Array<Rectangle>()
     public coins = new Array<Coin>()
     public canvas = <HTMLCanvasElement>document.getElementById('game-canvas')!
     public context = this.canvas.getContext('2d')!
-    public mousePosition = new Point(0, 0)
+    public mousePosition = { x: 0, y: 0 }
     public camera = new Camera(this.player.x, this.player.y)
 
     public leftMousePressed = false
@@ -34,10 +34,6 @@ export default class Game {
     public sounds = false
 
     constructor() {
-        this.blocks.push(new Block(0, 300, 200, 200))
-        this.blocks.push(new Block(200, 200, 200, 200))
-        this.blocks.push(new Block(-300, 550, 400, 100))
-        this.blocks.push(new Block(-10000, 10500, 20000, 100))
         this.generateBlocks()
         this.generateCoins()
 
@@ -55,12 +51,17 @@ export default class Game {
     }
 
     generateBlocks() {
+        this.blocks.push(new Rectangle(0, 300, 200, 200))
+        this.blocks.push(new Rectangle(200, 200, 200, 200))
+        this.blocks.push(new Rectangle(-300, 550, 400, 100))
+        this.blocks.push(new Rectangle(-10000, 10500, 20000, 100))
+
         for (let i = 0; i < 1000; i++) {
             const x = Math.floor(Math.random() * 10000) - 5000
             const y = Math.floor(Math.random() * 10000)
             const w = Math.floor(Math.random() * 600) + 50
             const h = Math.floor(Math.random() * 200) + 50
-            this.blocks.push(new Block(x, y, w, h))
+            this.blocks.push(new Rectangle(x, y, w, h))
         }
 
         const count = 10500 / 250
@@ -69,8 +70,8 @@ export default class Game {
             const y = i * 250
             const w = 200
             const h = 20
-            this.blocks.push(new Block(x, y, w, h))
-            this.blocks.push(new Block(-x, y, w, h))
+            this.blocks.push(new Rectangle(x, y, w, h))
+            this.blocks.push(new Rectangle(-x, y, w, h))
         }
     }
     generateCoins() {
@@ -246,16 +247,60 @@ export default class Game {
     render(interpolation: number) {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
-        const offsetX = this.camera.interpolatedX(interpolation) - window.innerWidth / 2
-        const offsetY = this.camera.interpolatedY(interpolation) - window.innerHeight / 2
+        const cameraX = this.camera.interpolatedX(interpolation)
+        const cameraY = this.camera.interpolatedY(interpolation)
+        const offsetX = cameraX - window.innerWidth / 2
+        const offsetY = cameraY - window.innerHeight / 2
 
         this.renderBlocks(offsetX, offsetY)
         this.renderCoins(interpolation, offsetX, offsetY)
+        this.renderVision(interpolation, offsetX, offsetY)
         this.renderPlayer(interpolation, offsetX, offsetY)
         this.renderOverlay(interpolation, offsetX, offsetY)
         this.renderCoinCounter()
         this.renderInstructions()
     }
+    renderVision(interpolation: number, offsetX: number, offsetY: number) {
+        const centerX = this.player.interpolatedX(interpolation) + Player.Width / 2
+        const centerY = this.player.interpolatedY(interpolation) + Player.Height / 2
+
+        const vision = new Vision({ x: centerX, y: centerY }, this.blocks, this.camera.displayRectangle(interpolation))
+
+        this.context.fillStyle = '#fff'
+        this.context.beginPath()
+        for (const point of vision.perimeter) {
+            const x = point.x - offsetX
+            const y = point.y - offsetY
+            this.context.moveTo(x, y)
+            this.context.arc(x, y, 3, 0, Tau)
+        }
+        this.context.fill()
+
+        this.context.strokeStyle = '#fff'
+        this.context.fillStyle = '#ff01'
+        this.context.beginPath()
+        const start = vision.perimeter[0]
+        this.context.moveTo(start.x - offsetX, start.y - offsetY)
+        for (let i = 1; i < vision.perimeter.length; i++) {
+            const point = vision.perimeter[i]
+            const x = point.x - offsetX
+            const y = point.y - offsetY
+            this.context.lineTo(x, y)
+        }
+        this.context.closePath()
+        this.context.stroke()
+        this.context.fill()
+
+        this.context.fillStyle = '#fff'
+        for (let i = 0; i < vision.perimeter.length; i++) {
+            const point = vision.perimeter[i]
+            const x = point.x - offsetX
+            const y = point.y - offsetY
+            this.context.fillText(i + '', x, y)
+            //this.context.fillText(point.extend + '', x, y)
+        }
+    }
+
     renderPlayer(interpolation: number, offsetX: number, offsetY: number) {
         this.context.fillStyle = '#ccc'
         const x = this.player.interpolatedX(interpolation) - offsetX

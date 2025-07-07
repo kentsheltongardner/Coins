@@ -1,4 +1,4 @@
-export default class Block {
+export default class Rectangle {
     x;
     y;
     w;

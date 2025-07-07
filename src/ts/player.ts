@@ -1,4 +1,4 @@
-import Block from './block.js'
+import Block from './rectangle.js'
 import Coin from './coin.js'
 
 export default class Player {
