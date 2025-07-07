@@ -54,6 +54,30 @@ export default class Vision {
         if (corner === octant)
             return Extend.None;
         switch (octant) {
+            case Direction.W: {
+                switch (corner) {
+                    case Direction.SE: return Extend.First;
+                    case Direction.NE: return Extend.Last;
+                }
+            }
+            case Direction.E: {
+                switch (corner) {
+                    case Direction.SW: return Extend.Last;
+                    case Direction.NW: return Extend.First;
+                }
+            }
+            case Direction.S: {
+                switch (corner) {
+                    case Direction.NW: return Extend.Last;
+                    case Direction.NE: return Extend.First;
+                }
+            }
+            case Direction.N: {
+                switch (corner) {
+                    case Direction.SE: return Extend.Last;
+                    case Direction.SW: return Extend.First;
+                }
+            }
             case Direction.SE:
                 switch (corner) {
                     case Direction.NE: return Extend.First;

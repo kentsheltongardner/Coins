@@ -15,8 +15,7 @@ export default class Wall {
     }
     isIntersectionInclusive(p1, p2) {
         // Handle parallel lines
-        if (p1.x === p2.x)
-            return p1.x === this.x;
+        //if (p1.x === p2.x) return p1.x === this.x
         // Handle both points on on side
         if ((p1.x - this.x) * (p2.x - this.x) >= 0)
             return false;
@@ -29,7 +28,7 @@ export default class Wall {
         if ((point.x - center.x) * (this.x - center.x) <= 0)
             return false;
         const y = this.intersectionY(center, point);
-        return y >= this.y1 && y <= this.y2;
+        return y > this.y1 && y < this.y2;
     }
     isFloorIntersectionInclusive(floor) {
         return floor.x1 <= this.x

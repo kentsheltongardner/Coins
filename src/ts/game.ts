@@ -17,6 +17,8 @@ export default class Game {
     public coins = new Array<Coin>()
     public canvas = <HTMLCanvasElement>document.getElementById('game-canvas')!
     public context = this.canvas.getContext('2d')!
+    public overlayCanvas = <HTMLCanvasElement>document.getElementById('overlay-canvas')!
+    public overlayContext = this.overlayCanvas.getContext('2d')!
     public mousePosition = { x: 0, y: 0 }
     public camera = new Camera(this.player.x, this.player.y)
 
@@ -51,9 +53,11 @@ export default class Game {
     }
 
     generateBlocks() {
-        this.blocks.push(new Rectangle(0, 300, 200, 200))
-        this.blocks.push(new Rectangle(200, 200, 200, 200))
-        this.blocks.push(new Rectangle(-300, 550, 400, 100))
+        this.blocks.push(new Rectangle(0, -300, 200, 200))
+        this.blocks.push(new Rectangle(200, -200, 200, 200))
+        this.blocks.push(new Rectangle(-300, -550, 400, 100))
+        this.blocks.push(new Rectangle(-1200, -550 - Player.Height / 2, 800, 100))
+        this.blocks.push(new Rectangle(200, -550 - Player.Height / 2, 800, 100))
         this.blocks.push(new Rectangle(-10000, 10500, 20000, 100))
 
         for (let i = 0; i < 1000; i++) {
@@ -243,9 +247,13 @@ export default class Game {
     resize() {
         this.canvas.width = window.innerWidth
         this.canvas.height = window.innerHeight
+
+        this.overlayCanvas.width = window.innerWidth
+        this.overlayCanvas.height = window.innerHeight
     }
     render(interpolation: number) {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
+        this.overlayContext.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height)
 
         const cameraX = this.camera.interpolatedX(interpolation)
         const cameraY = this.camera.interpolatedY(interpolation)
@@ -261,44 +269,44 @@ export default class Game {
         this.renderInstructions()
     }
     renderVision(interpolation: number, offsetX: number, offsetY: number) {
+        this.overlayContext.fillStyle = '#000f'
+        //this.overlayContext.fillRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height)
+
         const centerX = this.player.interpolatedX(interpolation) + Player.Width / 2
         const centerY = this.player.interpolatedY(interpolation) + Player.Height / 2
 
         const vision = new Vision({ x: centerX, y: centerY }, this.blocks, this.camera.displayRectangle(interpolation))
 
-        this.context.fillStyle = '#fff'
-        this.context.beginPath()
-        for (const point of vision.perimeter) {
-            const x = point.x - offsetX
-            const y = point.y - offsetY
-            this.context.moveTo(x, y)
-            this.context.arc(x, y, 3, 0, Tau)
-        }
-        this.context.fill()
-
-        this.context.strokeStyle = '#fff'
-        this.context.fillStyle = '#ff01'
-        this.context.beginPath()
+        this.overlayContext.strokeStyle = '#f80'
+        this.overlayContext.fillStyle = '#f80'
+        //this.overlayContext.lineWidth = 12
+        this.overlayContext.lineJoin = 'round'
+        this.overlayContext.beginPath()
         const start = vision.perimeter[0]
-        this.context.moveTo(start.x - offsetX, start.y - offsetY)
+        this.overlayContext.moveTo(start.x - offsetX, start.y - offsetY)
         for (let i = 1; i < vision.perimeter.length; i++) {
             const point = vision.perimeter[i]
             const x = point.x - offsetX
             const y = point.y - offsetY
-            this.context.lineTo(x, y)
+            this.overlayContext.lineTo(x, y)
         }
-        this.context.closePath()
-        this.context.stroke()
-        this.context.fill()
+        this.overlayContext.closePath()
+        this.overlayContext.fill()
 
-        this.context.fillStyle = '#fff'
-        for (let i = 0; i < vision.perimeter.length; i++) {
-            const point = vision.perimeter[i]
-            const x = point.x - offsetX
-            const y = point.y - offsetY
-            this.context.fillText(i + '', x, y)
-            //this.context.fillText(point.extend + '', x, y)
-        }
+        this.context.globalAlpha = 0.0625
+        this.context.drawImage(this.overlayCanvas, 0, 0)
+        this.context.globalAlpha = 1
+
+        // this.context.fillStyle = '#fff'
+        // this.context.beginPath()
+        // for (let i = 0; i < vision.perimeter.length; i++) {
+        //     const point = vision.perimeter[i]
+        //     const x = point.x - offsetX
+        //     const y = point.y - offsetY
+        //     this.context.moveTo(x, y)
+        //     this.context.arc(x, y, 5, 0, Tau)
+        // }
+        // this.context.fill()
     }
 
     renderPlayer(interpolation: number, offsetX: number, offsetY: number) {
@@ -331,7 +339,8 @@ export default class Game {
         for (const block of this.blocks) {
             const x = block.x - offsetX
             const y = block.y - offsetY
-            this.context.roundRect(x, y, block.w, block.h, BorderRadius)
+            this.context.roundRect(x, y, block.w, block.h, 0)
+            //this.context.roundRect(x, y, block.w, block.h, BorderRadius)
         }
         this.context.fillStyle = '#321'
         this.context.fill()
@@ -340,7 +349,8 @@ export default class Game {
         for (const block of this.blocks) {
             const x = block.x - offsetX + BorderThickness
             const y = block.y - offsetY + BorderThickness
-            this.context.roundRect(x, y, block.w - BorderThickness * 2, block.h - BorderThickness * 2, BorderRadius - BorderThickness)
+            this.context.roundRect(x, y, block.w - BorderThickness * 2, block.h - BorderThickness * 2, 0)
+            //this.context.roundRect(x, y, block.w - BorderThickness * 2, block.h - BorderThickness * 2, BorderRadius - BorderThickness)
         }
         this.context.fillStyle = '#100c08'
         this.context.fill()

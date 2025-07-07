@@ -2,15 +2,21 @@ body {
     margin: 0;
 }
 
-#game-canvas {
+canvas {
     position: fixed;
     width: 100vw;
     height: 100vh;
-    /* background-color: #000408; */
+}
+
+#game-canvas {
     background: linear-gradient(
     to bottom,
     #000000,
     #000408 50%,
     #0c0000
     );
+}
+
+#overlay-canvas {
+    display: none;
 }
