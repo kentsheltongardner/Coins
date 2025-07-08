@@ -32,10 +32,26 @@ export default class Player {
     public jumpFrame = 0
     public fallTime = 0.0
     public coins = 0
+    public targetX = 0
+    public targetY = 0
+    public targetTheta = 0
 
     constructor(x: number, y: number) {
         this.x = this.previousX = this.interpolatedX = x
         this.y = this.previousY = this.interpolatedY = y
+    }
+
+    get centerX() {
+        return this.x + Player.Width / 2
+    }
+    get centerY() {
+        return this.y + Player.Height / 2
+    }
+
+    target(x: number, y: number) {
+        this.targetX = x
+        this.targetY = y
+        this.targetTheta = Math.atan2(y - this.centerY, x - this.centerX)
     }
 
     interpolate(amount: number) {
@@ -117,9 +133,9 @@ export default class Player {
 
     move(direction: number, deltaTime: number, blocks: Block[]) {
         const speed = this.falling ? Player.FloatSpeed : Player.RunSpeed
-        this.vx = direction * speed * deltaTime
+        this.vx = direction * speed
         this.previousX = this.x
-        this.x += this.vx
+        this.x += this.vx * deltaTime
 
         if (!this.falling) {
             this.falling = this.fallingOff(blocks)

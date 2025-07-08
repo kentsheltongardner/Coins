@@ -3,6 +3,8 @@ import Camera from './camera.js';
 import Coin from './coin.js';
 import Player from './player.js';
 import Vision from './vision.js';
+import Shot from './shot.js';
+import Blast from './blast.js';
 const Tau = Math.PI * 2;
 const BorderThickness = 4;
 const BorderRadius = 6;
@@ -11,6 +13,8 @@ export default class Game {
     player = new Player(50, -2000);
     blocks = new Array();
     coins = new Array();
+    shots = new Array();
+    blasts = new Array();
     canvas = document.getElementById('game-canvas');
     context = this.canvas.getContext('2d');
     overlayCanvas = document.getElementById('overlay-canvas');
@@ -25,6 +29,7 @@ export default class Game {
     downPressed = false;
     jumpPressed = false;
     lookPressed = false;
+    fire = false;
     lastTime = 0;
     accumulator = 0;
     sounds = false;
@@ -86,6 +91,7 @@ export default class Game {
         switch (e.button) {
             case 0:
                 this.leftMousePressed = true;
+                this.fire = true;
                 break;
             case 2:
                 this.rightMousePressed = true;
@@ -95,6 +101,9 @@ export default class Game {
     mouseMove(e) {
         this.mousePosition.x = e.offsetX;
         this.mousePosition.y = e.offsetY;
+        const targetX = this.camera.gameX(this.mousePosition.x);
+        const targetY = this.camera.gameY(this.mousePosition.y);
+        this.player.target(targetX, targetY);
     }
     mouseUp(e) {
         switch (e.button) {
@@ -121,44 +130,44 @@ export default class Game {
             this.startSounds();
         }
         switch (e.code) {
-            case 'ArrowLeft':
+            case 'KeyA':
                 this.leftPressed = true;
                 break;
-            case 'ArrowRight':
+            case 'KeyD':
                 this.rightPressed = true;
                 break;
-            case 'ArrowUp':
+            case 'KeyW':
                 this.upPressed = true;
                 break;
-            case 'ArrowDown':
+            case 'KeyS':
                 this.downPressed = true;
                 break;
-            case 'KeyC':
+            case 'Space':
                 this.jumpPressed = true;
                 break;
-            case 'KeyX':
+            case 'ShiftLeft':
                 this.lookPressed = true;
                 break;
         }
     }
     keyUp(e) {
         switch (e.code) {
-            case 'ArrowLeft':
+            case 'KeyA':
                 this.leftPressed = false;
                 break;
-            case 'ArrowRight':
+            case 'KeyD':
                 this.rightPressed = false;
                 break;
-            case 'ArrowUp':
+            case 'KeyW':
                 this.upPressed = false;
                 break;
-            case 'ArrowDown':
+            case 'KeyS':
                 this.downPressed = false;
                 break;
-            case 'KeyC':
+            case 'Space':
                 this.jumpPressed = false;
                 break;
-            case 'KeyX':
+            case 'ShiftLeft':
                 this.lookPressed = false;
                 break;
         }
@@ -166,13 +175,21 @@ export default class Game {
     loop(time) {
         const deltaTime = Math.min((time - this.lastTime) / 1000, 0.25); // min to prevent catch up on resume
         this.lastTime = time;
-        this.update(deltaTime);
+        this.update(deltaTime, time);
         const interpolation = this.accumulator / Game.UpdateStep;
         this.render(interpolation);
         requestAnimationFrame(time => { this.loop(time); });
     }
-    update(deltaTime) {
+    update(deltaTime, time) {
         this.accumulator += deltaTime;
+        if (this.fire) {
+            const shot = new Shot(this.player);
+            this.shots.push(shot);
+            this.fire = false;
+        }
+        const targetX = this.camera.gameX(this.mousePosition.x);
+        const targetY = this.camera.gameY(this.mousePosition.y);
+        this.player.target(targetX, targetY);
         while (this.accumulator >= Game.UpdateStep) {
             if (this.jumpPressed && !this.lookPressed) {
                 if (this.player.jumpFrame === 0) {
@@ -210,8 +227,27 @@ export default class Game {
             for (const coin of this.coins) {
                 coin.seek(this.player.x + Player.Width / 2, this.player.y + Player.Height / 2, Game.UpdateStep);
             }
+            for (let i = this.shots.length - 1; i >= 0; i--) {
+                const shot = this.shots[i];
+                shot.update(Game.UpdateStep);
+                for (const block of this.blocks) {
+                    if (block.contains({ x: shot.x, y: shot.y })) {
+                        this.shots.splice(i, 1);
+                        this.blasts.push(new Blast(shot.x, shot.y));
+                        break;
+                    }
+                }
+            }
+            for (let i = this.blasts.length - 1; i >= 0; i--) {
+                const blast = this.blasts[i];
+                blast.update(Game.UpdateStep);
+                if (blast.expired()) {
+                    this.blasts.splice(i, 1);
+                }
+            }
             this.camera.track(this.player.x + Player.Width / 2 + focusX, this.player.y + Player.Height / 2 + focusY, Game.UpdateStep);
             this.accumulator -= Game.UpdateStep;
+            time += Game.UpdateStep;
         }
     }
     resize() {
@@ -228,10 +264,18 @@ export default class Game {
         for (const coin of this.coins) {
             coin.interpolate(interpolation);
         }
+        for (const shot of this.shots) {
+            shot.interpolate(interpolation);
+        }
+        for (const blast of this.blasts) {
+            blast.interpolate(interpolation);
+        }
         this.renderBlocks();
         this.renderCoins();
+        this.renderShots();
         this.renderVision();
         this.renderPlayer();
+        this.renderBlasts();
         this.renderOverlay();
         this.renderCoinCounter();
         this.renderInstructions();
@@ -280,11 +324,23 @@ export default class Game {
         this.context.beginPath();
         this.context.fillRect(x, y, w, h);
         this.context.fill();
+        this.context.lineWidth = 1;
         const centerX = this.camera.interpolatedDisplayX(this.player.interpolatedX + Player.Width / 2);
         const centerY = this.camera.interpolatedDisplayY(this.player.interpolatedY + Player.Height / 2);
         this.context.strokeStyle = '#fff2';
         this.context.beginPath();
         this.context.arc(centerX, centerY, this.camera.displayScale(Player.AttractionRadius), 0, Tau);
+        this.context.stroke();
+        this.context.fillStyle = '#ccc';
+        this.context.beginPath();
+        const targetX = this.camera.displayX(this.player.targetX);
+        const targetY = this.camera.displayY(this.player.targetY);
+        this.context.arc(targetX, targetY, this.camera.displayScale(6), 0, Tau);
+        this.context.fill();
+        this.context.fillStyle = '#ccc';
+        this.context.beginPath();
+        this.context.moveTo(centerX, centerY);
+        this.context.lineTo(targetX, targetY);
         this.context.stroke();
     }
     renderOverlay() {
@@ -328,8 +384,8 @@ export default class Game {
         for (const coin of this.coins) {
             if (coin.evil)
                 continue;
-            const x = this.camera.interpolatedDisplayX(coin.x);
-            const y = this.camera.interpolatedDisplayY(coin.y);
+            const x = this.camera.interpolatedDisplayX(coin.interpolatedX);
+            const y = this.camera.interpolatedDisplayY(coin.interpolatedY);
             this.context.moveTo(x, y);
             this.context.arc(x, y, r, 0, Tau);
         }
@@ -339,12 +395,42 @@ export default class Game {
         for (const coin of this.coins) {
             if (!coin.evil)
                 continue;
-            const x = this.camera.interpolatedDisplayX(coin.x);
-            const y = this.camera.interpolatedDisplayY(coin.y);
+            const x = this.camera.interpolatedDisplayX(coin.interpolatedX);
+            const y = this.camera.interpolatedDisplayY(coin.interpolatedY);
             this.context.moveTo(x, y);
             this.context.arc(x, y, r, 0, Tau);
         }
         this.context.fill();
+    }
+    renderBlasts() {
+        this.context.strokeStyle = '#ccc8';
+        this.context.beginPath();
+        for (const blast of this.blasts) {
+            const x = this.camera.interpolatedDisplayX(blast.x);
+            const y = this.camera.interpolatedDisplayY(blast.y);
+            const scalar = blast.age / Blast.Lifetime;
+            const r = this.camera.displayScale(Blast.Radius) * scalar;
+            this.context.lineWidth = this.camera.displayScale(1 / scalar);
+            this.context.moveTo(x + r, y);
+            this.context.arc(x, y, r, 0, Tau);
+        }
+        this.context.stroke();
+    }
+    renderShots() {
+        this.context.strokeStyle = '#ccc';
+        this.context.lineCap = 'round';
+        this.context.lineWidth = this.camera.displayScale(Shot.Width);
+        this.context.beginPath();
+        const length = this.camera.displayScale(Shot.Length);
+        for (const shot of this.shots) {
+            const x1 = this.camera.interpolatedDisplayX(shot.interpolatedX);
+            const y1 = this.camera.interpolatedDisplayY(shot.interpolatedY);
+            const x2 = x1 - Math.cos(shot.theta) * length;
+            const y2 = y1 - Math.sin(shot.theta) * length;
+            this.context.moveTo(x1, y1);
+            this.context.lineTo(x2, y2);
+        }
+        this.context.stroke();
     }
     renderCoinCounter() {
         this.context.fillStyle = '#aaa';
@@ -354,8 +440,9 @@ export default class Game {
     renderInstructions() {
         this.context.fillStyle = '#aaa';
         this.context.font = '16px sans-serif';
-        this.context.fillText('Use arrow keys to move', 10, window.innerHeight - 80);
-        this.context.fillText('Press \'c\' to jump', 10, window.innerHeight - 50);
-        this.context.fillText('Press \'x\' plus arrow keys to look', 10, window.innerHeight - 20);
+        this.context.fillText('Use WASD keys to move', 10, window.innerHeight - 110);
+        this.context.fillText('Press SPACE to jump', 10, window.innerHeight - 80);
+        this.context.fillText('Use MOUSE to aim and fire', 10, window.innerHeight - 50);
+        this.context.fillText('Press LEFT SHIFT plus arrow keys to look', 10, window.innerHeight - 20);
     }
 }
