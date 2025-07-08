@@ -37,12 +37,33 @@ export default class Vision {
     constructor(center, blocks, bounds) {
         this.center = center;
         this.bounds = bounds;
+        this.extendBounds();
         this.addBoundsCornersAndSides();
         this.addBlockCornersAndSides(blocks);
         this.addIntersections();
         this.removeObstructedPoints();
         this.orderPoints();
         this.extendPoints();
+    }
+    extendBounds() {
+        if (this.center.x < this.bounds.x) {
+            this.bounds.w += this.bounds.x - this.center.x;
+            this.bounds.x = this.center.x;
+        }
+        else if (this.center.x > this.bounds.x + this.bounds.w) {
+            this.bounds.w = this.center.x - this.bounds.x;
+        }
+        if (this.center.y < this.bounds.y) {
+            this.bounds.h += this.bounds.y - this.center.y;
+            this.bounds.y = this.center.y;
+        }
+        else if (this.center.y > this.bounds.y + this.bounds.h) {
+            this.bounds.h = this.center.y - this.bounds.y;
+        }
+        this.bounds.x--;
+        this.bounds.y--;
+        this.bounds.w += 2;
+        this.bounds.h += 2;
     }
     octant(point) {
         const octantX = Math.sign(point.x - this.center.x) + 1;
@@ -238,9 +259,6 @@ export default class Vision {
                 extendPoint.y = y;
                 extendDistanceSquared = distanceSquared;
             }
-        }
-        if (extendPoint.x === 0 && extendPoint.y === 0) {
-            console.log(point);
         }
         return extendPoint;
     }

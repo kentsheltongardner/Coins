@@ -22,6 +22,8 @@ export default class Player {
     public y: number
     public previousX: number
     public previousY: number
+    public interpolatedX: number
+    public interpolatedY: number
 
     public vx = 0
     public vy = 0
@@ -32,15 +34,13 @@ export default class Player {
     public coins = 0
 
     constructor(x: number, y: number) {
-        this.x = this.previousX = x
-        this.y = this.previousY = y
+        this.x = this.previousX = this.interpolatedX = x
+        this.y = this.previousY = this.interpolatedY = y
     }
 
-    interpolatedX(interpolation: number) {
-        return this.previousX + (this.x - this.previousX) * interpolation
-    }
-    interpolatedY(interpolation: number) {
-        return this.previousY + (this.y - this.previousY) * interpolation
+    interpolate(amount: number) {
+        this.interpolatedX = this.previousX + (this.x - this.previousX) * amount
+        this.interpolatedY = this.previousY + (this.y - this.previousY) * amount
     }
 
 

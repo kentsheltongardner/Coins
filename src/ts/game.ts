@@ -122,7 +122,11 @@ export default class Game {
         }
     }
     mouseWheel(e: WheelEvent) {
-
+        if (e.deltaY > 0) {
+            this.camera.zoomOut()
+        } else if (e.deltaY < 0) {
+            this.camera.zoomIn()
+        }
     }
     mouseLeave() {
 
@@ -237,9 +241,7 @@ export default class Game {
                 coin.seek(this.player.x + Player.Width / 2, this.player.y + Player.Height / 2, Game.UpdateStep)
             }
 
-
-
-            this.camera.track(this.player.x + focusX, this.player.y + focusY, Game.UpdateStep)
+            this.camera.track(this.player.x + Player.Width / 2 + focusX, this.player.y + Player.Height / 2 + focusY, Game.UpdateStep)
             this.accumulator -= Game.UpdateStep
         }
     }
@@ -255,27 +257,28 @@ export default class Game {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
         this.overlayContext.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height)
 
-        const cameraX = this.camera.interpolatedX(interpolation)
-        const cameraY = this.camera.interpolatedY(interpolation)
-        const offsetX = cameraX - window.innerWidth / 2
-        const offsetY = cameraY - window.innerHeight / 2
+        this.camera.interpolate(interpolation)
+        this.player.interpolate(interpolation)
+        for (const coin of this.coins) {
+            coin.interpolate(interpolation)
+        }
 
-        this.renderBlocks(offsetX, offsetY)
-        this.renderCoins(interpolation, offsetX, offsetY)
-        this.renderVision(interpolation, offsetX, offsetY)
-        this.renderPlayer(interpolation, offsetX, offsetY)
-        this.renderOverlay(interpolation, offsetX, offsetY)
+        this.renderBlocks()
+        this.renderCoins()
+        this.renderVision()
+        this.renderPlayer()
+        this.renderOverlay()
         this.renderCoinCounter()
         this.renderInstructions()
     }
-    renderVision(interpolation: number, offsetX: number, offsetY: number) {
+    renderVision() {
         this.overlayContext.fillStyle = '#000f'
         //this.overlayContext.fillRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height)
 
-        const centerX = this.player.interpolatedX(interpolation) + Player.Width / 2
-        const centerY = this.player.interpolatedY(interpolation) + Player.Height / 2
+        const centerX = this.player.interpolatedX + Player.Width / 2
+        const centerY = this.player.interpolatedY + Player.Height / 2
 
-        const vision = new Vision({ x: centerX, y: centerY }, this.blocks, this.camera.displayRectangle(interpolation))
+        const vision = new Vision({ x: centerX, y: centerY }, this.blocks, this.camera.displayRectangle())
 
         this.overlayContext.strokeStyle = '#f80'
         this.overlayContext.fillStyle = '#f80'
@@ -283,11 +286,11 @@ export default class Game {
         this.overlayContext.lineJoin = 'round'
         this.overlayContext.beginPath()
         const start = vision.perimeter[0]
-        this.overlayContext.moveTo(start.x - offsetX, start.y - offsetY)
+        this.overlayContext.moveTo(this.camera.interpolatedDisplayX(start.x), this.camera.interpolatedDisplayY(start.y))
         for (let i = 1; i < vision.perimeter.length; i++) {
             const point = vision.perimeter[i]
-            const x = point.x - offsetX
-            const y = point.y - offsetY
+            const x = this.camera.interpolatedDisplayX(point.x)
+            const y = this.camera.interpolatedDisplayY(point.y)
             this.overlayContext.lineTo(x, y)
         }
         this.overlayContext.closePath()
@@ -301,30 +304,34 @@ export default class Game {
         // this.context.beginPath()
         // for (let i = 0; i < vision.perimeter.length; i++) {
         //     const point = vision.perimeter[i]
-        //     const x = point.x - offsetX
-        //     const y = point.y - offsetY
+        //     const x = this.camera.displayX(point.x)
+        //     const y = this.camera.displayY(point.y)
         //     this.context.moveTo(x, y)
         //     this.context.arc(x, y, 5, 0, Tau)
         // }
         // this.context.fill()
     }
 
-    renderPlayer(interpolation: number, offsetX: number, offsetY: number) {
+    renderPlayer() {
         this.context.fillStyle = '#ccc'
-        const x = this.player.interpolatedX(interpolation) - offsetX
-        const y = this.player.interpolatedY(interpolation) - offsetY
+        const x = this.camera.interpolatedDisplayX(this.player.interpolatedX)
+        const y = this.camera.interpolatedDisplayY(this.player.interpolatedY)
+        const w = this.camera.displayScale(Player.Width)
+        const h = this.camera.displayScale(Player.Height)
         this.context.beginPath()
-        this.context.roundRect(x, y, Player.Width, Player.Height, 3)
+        this.context.fillRect(x, y, w, h)
         this.context.fill()
 
+        const centerX = this.camera.interpolatedDisplayX(this.player.interpolatedX + Player.Width / 2)
+        const centerY = this.camera.interpolatedDisplayY(this.player.interpolatedY + Player.Height / 2)
         this.context.strokeStyle = '#fff2'
         this.context.beginPath()
-        this.context.arc(x + Player.Width / 2, y + Player.Height / 2, Player.AttractionRadius, 0, Tau)
+        this.context.arc(centerX, centerY, this.camera.displayScale(Player.AttractionRadius), 0, Tau)
         this.context.stroke()
     }
-    renderOverlay(interpolation: number, offsetX: number, offsetY: number) {
-        const x = this.player.interpolatedX(interpolation) - offsetX + Player.Width / 2
-        const y = this.player.interpolatedY(interpolation) - offsetY + Player.Height / 2
+    renderOverlay() {
+        const x = this.camera.interpolatedDisplayX(this.player.interpolatedX + Player.Width / 2)
+        const y = this.camera.interpolatedDisplayY(this.player.interpolatedY + Player.Height / 2)
         const gradient = this.context.createRadialGradient(x, y, 0, x, y, 500)
         gradient.addColorStop(0, '#0000')
         gradient.addColorStop(0.6, '#0018')
@@ -334,37 +341,40 @@ export default class Game {
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
         this.context.globalCompositeOperation = 'source-over'
     }
-    renderBlocks(offsetX: number, offsetY: number) {
+    renderBlocks() {
         this.context.beginPath()
         for (const block of this.blocks) {
-            const x = block.x - offsetX
-            const y = block.y - offsetY
-            this.context.roundRect(x, y, block.w, block.h, 0)
-            //this.context.roundRect(x, y, block.w, block.h, BorderRadius)
+            const x = this.camera.interpolatedDisplayX(block.x)
+            const y = this.camera.interpolatedDisplayY(block.y)
+            const w = this.camera.displayScale(block.w)
+            const h = this.camera.displayScale(block.h)
+            this.context.roundRect(x, y, w, h, 0)
         }
         this.context.fillStyle = '#421'
         this.context.fill()
 
         this.context.beginPath()
         for (const block of this.blocks) {
-            const x = block.x - offsetX + BorderThickness
-            const y = block.y - offsetY + BorderThickness
-            this.context.roundRect(x, y, block.w - BorderThickness * 2, block.h - BorderThickness * 2, 0)
-            //this.context.roundRect(x, y, block.w - BorderThickness * 2, block.h - BorderThickness * 2, BorderRadius - BorderThickness)
+            const x = this.camera.interpolatedDisplayX(block.x + BorderThickness)
+            const y = this.camera.interpolatedDisplayY(block.y + BorderThickness)
+            const w = this.camera.displayScale(block.w - BorderThickness * 2)
+            const h = this.camera.displayScale(block.h - BorderThickness * 2)
+            this.context.roundRect(x, y, w, h, 0)
         }
         this.context.fillStyle = '#201208'
         this.context.fill()
     }
-    renderCoins(interpolation: number, offsetX: number, offsetY: number) {
+    renderCoins() {
         this.context.fillStyle = '#fc0'
         this.context.beginPath()
+        const r = this.camera.displayScale(Coin.Radius)
         for (const coin of this.coins) {
             if (coin.evil) continue
 
-            const x = coin.interpolatedX(interpolation) - offsetX
-            const y = coin.interpolatedY(interpolation) - offsetY
+            const x = this.camera.interpolatedDisplayX(coin.x)
+            const y = this.camera.interpolatedDisplayY(coin.y)
             this.context.moveTo(x, y)
-            this.context.arc(x, y, Coin.Radius, 0, Tau)
+            this.context.arc(x, y, r, 0, Tau)
         }
         this.context.fill()
 
@@ -373,10 +383,10 @@ export default class Game {
         for (const coin of this.coins) {
             if (!coin.evil) continue
 
-            const x = coin.interpolatedX(interpolation) - offsetX
-            const y = coin.interpolatedY(interpolation) - offsetY
+            const x = this.camera.interpolatedDisplayX(coin.x)
+            const y = this.camera.interpolatedDisplayY(coin.y)
             this.context.moveTo(x, y)
-            this.context.arc(x, y, Coin.Radius, 0, Tau)
+            this.context.arc(x, y, r, 0, Tau)
         }
         this.context.fill()
     }

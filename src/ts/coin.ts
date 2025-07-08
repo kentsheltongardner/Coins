@@ -8,6 +8,8 @@ export default class Coin {
     public y: number
     public previousX: number
     public previousY: number
+    public interpolatedX: number
+    public interpolatedY: number
     public vx = 0
     public vy = 0
     public seeking = false
@@ -15,16 +17,14 @@ export default class Coin {
 
 
     constructor(x: number, y: number, evil: boolean) {
-        this.x = this.previousX = x
-        this.y = this.previousY = y
+        this.x = this.previousX = this.interpolatedX = x
+        this.y = this.previousY = this.interpolatedY = y
         this.evil = evil
     }
 
-    interpolatedX(interpolation: number) {
-        return this.previousX + (this.x - this.previousX) * interpolation
-    }
-    interpolatedY(interpolation: number) {
-        return this.previousY + (this.y - this.previousY) * interpolation
+    interpolate(amount: number) {
+        this.interpolatedX = this.previousX + (this.x - this.previousX) * amount
+        this.interpolatedY = this.previousY + (this.y - this.previousY) * amount
     }
 
     drag(deltaTime: number) {

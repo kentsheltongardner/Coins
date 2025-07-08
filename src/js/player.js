@@ -17,6 +17,8 @@ export default class Player {
     y;
     previousX;
     previousY;
+    interpolatedX;
+    interpolatedY;
     vx = 0;
     vy = 0;
     falling = true;
@@ -25,14 +27,12 @@ export default class Player {
     fallTime = 0.0;
     coins = 0;
     constructor(x, y) {
-        this.x = this.previousX = x;
-        this.y = this.previousY = y;
+        this.x = this.previousX = this.interpolatedX = x;
+        this.y = this.previousY = this.interpolatedY = y;
     }
-    interpolatedX(interpolation) {
-        return this.previousX + (this.x - this.previousX) * interpolation;
-    }
-    interpolatedY(interpolation) {
-        return this.previousY + (this.y - this.previousY) * interpolation;
+    interpolate(amount) {
+        this.interpolatedX = this.previousX + (this.x - this.previousX) * amount;
+        this.interpolatedY = this.previousY + (this.y - this.previousY) * amount;
     }
     penetrateRight(block) {
         return this.x < block.x && this.x + Player.Width > block.x && this.yOverlap(block);
