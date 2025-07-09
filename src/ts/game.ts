@@ -52,6 +52,7 @@ export default class Game {
         window.addEventListener('keyup', e => this.keyUp(e))
         window.addEventListener('wheel', e => this.mouseWheel(e))
         window.addEventListener('resize', () => this.resize())
+        window.addEventListener('contextmenu', e => e.preventDefault())
 
         this.resize()
         requestAnimationFrame(time => this.loop(time)) 
@@ -248,8 +249,9 @@ export default class Game {
                 if (this.upPressed) {
                     focusY--
                 }
-                focusX *= 400
-                focusY *= 400
+                const focusDistance = 400 / this.camera.zoomScalar
+                focusX *= focusDistance
+                focusY *= focusDistance
             }
             
             this.player.fall(Game.UpdateStep, this.blocks)
@@ -308,12 +310,14 @@ export default class Game {
             blast.interpolate(interpolation)
         }
 
+
+        this.renderBlasts()
         this.renderBlocks()
         this.renderCoins()
         this.renderShots()
         this.renderVision()
         this.renderPlayer()
-        this.renderBlasts()
+
         this.renderOverlay()
         this.renderCoinCounter()
         this.renderInstructions()
@@ -393,10 +397,11 @@ export default class Game {
     renderOverlay() {
         const x = this.camera.interpolatedDisplayX(this.player.interpolatedX + Player.Width / 2)
         const y = this.camera.interpolatedDisplayY(this.player.interpolatedY + Player.Height / 2)
-        const gradient = this.context.createRadialGradient(x, y, 0, x, y, 500)
+        const r = this.camera.displayScale(500)
+        const gradient = this.context.createRadialGradient(x, y, 0, x, y, r)
         gradient.addColorStop(0, '#0000')
         gradient.addColorStop(0.6, '#0018')
-        gradient.addColorStop(1, '#012a')
+        gradient.addColorStop(1, '#012f')
         this.context.globalCompositeOperation = 'overlay'
         this.context.fillStyle = gradient
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
@@ -491,9 +496,10 @@ export default class Game {
     renderInstructions() {
         this.context.fillStyle = '#aaa'
         this.context.font = '16px sans-serif'
-        this.context.fillText('Use WASD keys to move', 10, window.innerHeight - 110)
-        this.context.fillText('Press SPACE to jump', 10, window.innerHeight - 80)
-        this.context.fillText('Use MOUSE to aim and fire', 10, window.innerHeight - 50)
-        this.context.fillText('Press LEFT SHIFT plus arrow keys to look', 10, window.innerHeight - 20)
+        this.context.fillText('Use WASD keys to move', 10, window.innerHeight - 140)
+        this.context.fillText('Press SPACE to jump', 10, window.innerHeight - 110)
+        this.context.fillText('Use MOUSE to aim and fire', 10, window.innerHeight - 80)
+        this.context.fillText('Press LEFT SHIFT plus arrow keys to look', 10, window.innerHeight - 50)
+        this.context.fillText('Use MOUSE WHEEL to zoom', 10, window.innerHeight - 20)
     }
 }

@@ -2,19 +2,17 @@ import Block from './rectangle.js'
 import Coin from './coin.js'
 
 export default class Player {
-    static readonly FallAcceleration = 3000
-    static readonly RunSpeed = 500
-    static readonly FloatSpeed = 500
-    static readonly JumpImpulse = 45000
-    static readonly JumpHangScalar = 2
-    static readonly HeadBounce = 0.25
-    static readonly CoyoteTime = 0.0625
-    static readonly Drag = 1.25
-    static readonly AttractionRadius = 160
-    static readonly CollectionRadius = 20
-    static readonly JumpCushion = 5
-
-
+    public static readonly FallAcceleration = 3000
+    public static readonly RunSpeed = 500
+    public static readonly FloatSpeed = 500
+    public static readonly JumpImpulse = 48000
+    public static readonly JumpHangScalar = 2
+    public static readonly HeadBounce = 0.25
+    public static readonly CoyoteTime = 0.0625
+    public static readonly Drag = 1.25
+    public static readonly AttractionRadius = 160
+    public static readonly CollectionRadius = 20
+    public static readonly JumpCushion = 5
     public static readonly Width = 30
     public static readonly Height = 50
 

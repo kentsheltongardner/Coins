@@ -3,7 +3,7 @@ export default class Player {
     static FallAcceleration = 3000;
     static RunSpeed = 500;
     static FloatSpeed = 500;
-    static JumpImpulse = 45000;
+    static JumpImpulse = 48000;
     static JumpHangScalar = 2;
     static HeadBounce = 0.25;
     static CoyoteTime = 0.0625;
